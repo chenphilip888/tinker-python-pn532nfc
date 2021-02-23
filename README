@@ -1,0 +1,144 @@
+nfc experiments on the ASUS Tinkerboard.
+
+nfc host controller card: Adafruit PN532 NFC Shield
+
+The following 8 tests are included:
+1. iso14443a_uid  ( read nfc card's uid )
+2. memdump        ( dump all memory in the nfc cards )
+3. readMifare     ( write read memory in the nfc cards )
+4. ntag21x_rw     ( write read mifareultralight )
+5. memerase       ( erase all memory in the nfc cards )
+6. formatndef     ( change mifareclassic to mifareclassic_ndef )
+7. updatendef     ( write read mifareclassic_ndef )
+8. ndeftoclassic  ( change mifareclassic_ndef to mifareclassic )
+
+-------------------------------------------------------------------
+
+To compile and flash to sd card:
+
+cd ~/tinker-python-pn532nfc
+Download OS:
+wget https://dlcdnets.asus.com/pub/ASUS/mb/Embedded_IPC/TinkerBoard_S/Tinker_Board-Debian-Stretch-V2.1.16-20200813.zip
+unzip Tinker_Board-Debian-Stretch-V2.1.16-20200813.zip
+Use balenaEtcher to burn img to sd card.
+eject sd card.
+Plugin sd card to PC.
+cp rk3288.conf /media/$USER/4C89-2DED/extlinux/extlinux.conf
+sync
+sudo umount /media/$USER/4C89-2DED
+eject sd card.
+Plugin the sd card to ASUS Tinkerboard.
+Connect Tinkerboard gpio Pin 8 to serial USB cable TX.
+Connect Tinkerboard gpio pin 10 to serial USB cable RX. 
+Connect Tinkerboard gpio pin 39 to serial USB cable ground. 
+Type "script ~/outputfile.txt" on PC.
+Plugin serial USB cable to PC.
+Type "sudo screen /dev/ttyUSB0 115200" on PC.
+Power on ASUS Tinkerboard.
+It should prompt login message.
+user linaro
+password linaro
+sudo tinker-config
+set password, locale, timezone etc.
+vi nosleep.sh ( add following line to disable sleep feature )
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.ta
+rget
+./nosleep.sh
+sudo dmesg -n 1
+sudo vi /etc/rc.local ( add sudo dmesg -n 1 )
+setup wifi:
+nmcli dev wifi list
+sudo nmcli con add con-name WiFi ifname wlan0 type wifi ssid mywifissid
+sudo nmcli con modify WiFi wifi-sec.key-mgmt wpa-psk
+sudo nmcli con modify WiFi wifi-sec.psk mypassword
+sudo nmcli con up WiFi
+sudo ifconfig
+sudo shutdown -h now
+Power off the ASUS Tinkerboard.
+Unplug serial USB cable from PC.
+Type "exit" on PC.
+Power on ASUS Tinkerboard.
+ssh linaro@192.168.86.xxx
+date
+sudo ifconfig
+lsb_release -a
+sudo apt-get update
+sudo apt-get upgrade
+sync
+sudo reboot
+sudo apt-get install python-dev python-pip python-setuptools python3-dev python3-pip python3-setuptools dnsutils apache2 vsftpd ftp git python3-smbus i2c-tools
+sudo pip3 install python-periphery
+sudo pip3 install smbus2
+sudo cat /proc/device-tree/spi@ff130000/status  ( spi-2 )
+sudo cat /proc/device-tree/i2c@ff140000/status  ( i2c-1 )
+sudo cat /proc/device-tree/i2c@ff160000/status  ( i2c-4 )
+sudo i2cdetect -y 1
+sudo i2cdetect -y 4
+
+Datasheet of pn532 in https://www.nxp.com/docs/en/nxp/data-sheets/PN532_C1.pdf
+application: https://www.nxp.com/docs/en/user-guide/141520.pdf
+https://raspberrypi.stackexchange.com/questions/109773/how-can-rpi-spi-python-read-the-mfrc522-nfc-module
+NFC info see https://www.nxp.com/docs/en/application-note/AN1305.pdf
+             https://www.nxp.com/docs/en/application-note/AN1304.pdf
+             https://www.nxp.com/docs/en/data-sheet/MF0ICU2.pdf
+examples: see https://github.com/nfc-tools/libfreefare/
+Tutorial: see https://learn.adafruit.com/adafruit-pn532-rfid-nfc/mifare
+
+-------------------------------------------------------------------------
+
+Here are the summary of the tests: ( see tinker_gpio.png )
+
+These tests used Adafruit PN532 NFC Shield.
+To use Adafruit PN532 NFC Shield see https://learn.adafruit.com/adafruit-pn532-rfid-nfc
+
+-------------------------------------------------------------------------
+
+Here are the procedure to test the above 8 tests:
+
+For spi:
+Connect gpio pin 19 to pn532 MOSI.
+Connect gpio pin 24 to pn532 SSEL.
+Connect gpio pin 21 to pn532 MISO.
+Connect gpio pin 23 to pn532 SCK.
+Connect gpio pin 2 to pn532 5V.
+Connect gpio pin 9 to pn532 ground.
+
+For i2c:
+Connect gpio pin 3 to pn532 SDA
+Connect gpio pin 5 to pn532 SCL
+Connect gpio pin 2 to pn532 5V.
+Connect gpio pin 9 to pn532 ground.
+
+git clone https://github.com/chenphilip888/tinker-python-pn532nfc.git
+cd ~/tinker-python-pn532nfc
+For spi:
+change *.py file to use SPI ( from pn532_spi import * )
+For i2c:
+change *.py file to use I2C ( from pn532_i2c import * )
+
+python3 iso14443a_uid.py   ( for mifareclaasic and mifareultralight )
+python3 memdump.py         ( for mifareclaasic and mifareultralight )
+python3 readMifare.py      ( for mifareclaasic and mifareultralight )
+python3 memdump.py         ( for mifareclaasic and mifareultralight )
+python3 ntag21x_rw.py      ( for mifareultralight )
+python3 memdump.py         ( for mifareultralight )
+python3 memerase.py        ( for mifareclaasic and mifareultralight )
+python3 memdump.py         ( for mifareclaasic and mifareultralight )
+python3 formatndef.py      ( for mifareclaasic )
+python3 memdump.py         ( for mifareclaasic )
+python3 updatendef.py      ( for mifareclaasic )
+python3 memdump.py         ( for mifareclaasic )
+python3 memerase.py        ( for mifareclaasic )
+python3 memdump.py         ( for mifareclaasic )
+python3 ndeftoclassic.py   ( for mifareclaasic )
+python3 memdump.py         ( for mifareclaasic )
+python3 readMifare.py      ( for mifareclaasic )
+python3 memdump.py         ( for mifareclaasic )
+python3 memerase.py        ( for mifareclaasic )
+python3 memdump.py         ( for mifareclaasic )
+
+When done all tests:
+sudo shutdown -h now
+Power off the ASUS Tinkerboard.
+
+-----------------------------------------------------------------------------
